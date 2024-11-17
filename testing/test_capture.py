@@ -396,40 +396,6 @@ class TestLoggingInteraction:
         assert "something" not in result.stderr.str()
         assert "operation on closed file" not in result.stderr.str()
 
-    def test_logging_after_cap_stopped(self, pytester: Pytester) -> None:
-        pytester.makeconftest(
-            """\
-                import pytest
-                import logging
-
-                log = logging.getLogger(__name__)
-
-                @pytest.fixture
-                def log_on_teardown():
-                    yield
-                    log.warning('Logging on teardown')
-            """
-        )
-        # make sure that logging is still captured in tests
-        p = pytester.makepyfile(
-            """\
-            def test_hello(log_on_teardown):
-                import logging
-                logging.warning("hello433")
-                assert 1
-                raise KeyboardInterrupt()
-            """
-        )
-        result = pytester.runpytest_subprocess(p, "--log-cli-level", "info")
-        assert result.ret != 0
-        result.stdout.fnmatch_lines(
-            ["*WARNING*hello433*", "*WARNING*Logging on teardown*"]
-        )
-        assert (
-            "AttributeError: 'NoneType' object has no attribute 'resume_capturing'"
-            not in result.stderr.str()
-        )
-
 
 class TestCaptureFixture:
     @pytest.mark.parametrize("opt", [[], ["-s"]])
@@ -1503,98 +1469,6 @@ def test_crash_on_closing_tmpfile_py27(
     result.stdout.no_fnmatch_line("*OSError*")
 
 
-def test_global_capture_with_live_logging(pytester: Pytester) -> None:
-    # Issue 3819
-    # capture should work with live cli logging
-
-    # Teardown report seems to have the capture for the whole process (setup, capture, teardown)
-    pytester.makeconftest(
-        """
-        def pytest_runtest_logreport(report):
-            if "test_global" in report.nodeid:
-                if report.when == "teardown":
-                    with open("caplog", "w", encoding="utf-8") as f:
-                        f.write(report.caplog)
-                    with open("capstdout", "w", encoding="utf-8") as f:
-                        f.write(report.capstdout)
-        """
-    )
-
-    pytester.makepyfile(
-        """
-        import logging
-        import sys
-        import pytest
-
-        logger = logging.getLogger(__name__)
-
-        @pytest.fixture
-        def fix1():
-            print("fix setup")
-            logging.info("fix setup")
-            yield
-            logging.info("fix teardown")
-            print("fix teardown")
-
-        def test_global(fix1):
-            print("begin test")
-            logging.info("something in test")
-            print("end test")
-        """
-    )
-    result = pytester.runpytest_subprocess("--log-cli-level=INFO")
-    assert result.ret == 0
-
-    with open("caplog", encoding="utf-8") as f:
-        caplog = f.read()
-
-    assert "fix setup" in caplog
-    assert "something in test" in caplog
-    assert "fix teardown" in caplog
-
-    with open("capstdout", encoding="utf-8") as f:
-        capstdout = f.read()
-
-    assert "fix setup" in capstdout
-    assert "begin test" in capstdout
-    assert "end test" in capstdout
-    assert "fix teardown" in capstdout
-
-
-@pytest.mark.parametrize("capture_fixture", ["capsys", "capfd"])
-def test_capture_with_live_logging(
-    pytester: Pytester, capture_fixture: CaptureFixture[str]
-) -> None:
-    # Issue 3819
-    # capture should work with live cli logging
-
-    pytester.makepyfile(
-        f"""
-        import logging
-        import sys
-
-        logger = logging.getLogger(__name__)
-
-        def test_capture({capture_fixture}):
-            print("hello")
-            sys.stderr.write("world\\n")
-            captured = {capture_fixture}.readouterr()
-            assert captured.out == "hello\\n"
-            assert captured.err == "world\\n"
-
-            logging.info("something")
-            print("next")
-            logging.info("something")
-
-            captured = {capture_fixture}.readouterr()
-            assert captured.out == "next\\n"
-        """
-    )
-
-    result = pytester.runpytest_subprocess("--log-cli-level=INFO")
-    assert result.ret == 0
-
-
 def test_typeerror_encodedfile_write(pytester: Pytester) -> None:
     """It should behave the same with and without output capturing (#4861)."""
     p = pytester.makepyfile(
@@ -1637,32 +1511,3 @@ def test__get_multicapture() -> None:
     pytest.raises(ValueError, _get_multicapture, "unknown").match(
         r"^unknown capturing method: 'unknown'"
     )
-
-
-def test_logging_while_collecting(pytester: Pytester) -> None:
-    """Issue #6240: Calls to logging.xxx() during collection causes all logging calls to be duplicated to stderr"""
-    p = pytester.makepyfile(
-        """\
-        import logging
-
-        logging.warning("during collection")
-
-        def test_logging():
-            logging.warning("during call")
-            assert False
-        """
-    )
-    result = pytester.runpytest_subprocess(p)
-    assert result.ret == ExitCode.TESTS_FAILED
-    result.stdout.fnmatch_lines(
-        [
-            "*test_*.py F*",
-            "====* FAILURES *====",
-            "____*____",
-            "*--- Captured log call*",
-            "WARNING * during call",
-            "*1 failed*",
-        ]
-    )
-    result.stdout.no_fnmatch_line("*Captured stderr call*")
-    result.stdout.no_fnmatch_line("*during collection*")

@@ -1304,7 +1304,6 @@ def test_tee_stdio_captures_and_live_prints(pytester: Pytester) -> None:
     result = pytester.runpytest_subprocess(
         testpath,
         "--capture=tee-sys",
-        "--junitxml=output.xml",
         "-o",
         "junit_logging=all",
     )
@@ -1312,11 +1311,6 @@ def test_tee_stdio_captures_and_live_prints(pytester: Pytester) -> None:
     # ensure stdout/stderr were 'live printed'
     result.stdout.fnmatch_lines(["*@this is stdout@*"])
     result.stderr.fnmatch_lines(["*@this is stderr@*"])
-
-    # now ensure the output is in the junitxml
-    fullXml = pytester.path.joinpath("output.xml").read_text(encoding="utf-8")
-    assert "@this is stdout@\n" in fullXml
-    assert "@this is stderr@\n" in fullXml
 
 
 @pytest.mark.skipif(

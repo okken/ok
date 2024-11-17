@@ -1,7 +1,7 @@
 
 # Title of decision
 
-## Status
+## Status (optional)
 What is the status, such as proposed, accepted, trying it out, rejected, deprecated, superseded, etc.?
 
 ## Decision

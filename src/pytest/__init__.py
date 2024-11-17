@@ -28,7 +28,6 @@ from _pytest.fixtures import yield_fixture
 from _pytest.freeze_support import freeze_includes
 from _pytest.legacypath import TempdirFactory
 from _pytest.legacypath import Testdir
-from _pytest.logging import LogCaptureFixture
 from _pytest.main import Dir
 from _pytest.main import Session
 from _pytest.mark import Mark
@@ -116,7 +115,6 @@ __all__ = [
     "importorskip",
     "Item",
     "LineMatcher",
-    "LogCaptureFixture",
     "main",
     "mark",
     "Mark",

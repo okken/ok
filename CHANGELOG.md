@@ -18,6 +18,11 @@ All notable changes to this project should be documented in this file.
 - nothing so far
 -->
 
+## [Unreleased] - 2024-Aug-25
+
+- break fork with pytest
+- add docs/adr for Architectural Decision Records
+
 ## [0.832.5] - 2024-Aug-25
 
 ### Removed

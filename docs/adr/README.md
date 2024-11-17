@@ -1,0 +1,1 @@
+This directory is a list of Architectural Decision Records for "ok".
