@@ -20,8 +20,14 @@ All notable changes to this project should be documented in this file.
 
 ## [Unreleased] - 2024-Aug-25
 
+
+## [0.1.1] - 2024-Nov-16
+
 - break fork with pytest
 - add docs/adr for Architectural Decision Records
+- remove logging support
+- switch to a more sane version scheme
+  - not tracking pytest anymore, so having the version we forked from doesn't really help anyone
 
 ## [0.832.5] - 2024-Aug-25
 

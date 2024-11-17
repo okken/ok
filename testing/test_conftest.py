@@ -425,22 +425,6 @@ def test_no_conftest(pytester: Pytester) -> None:
     assert result.ret == ExitCode.USAGE_ERROR
 
 
-def test_conftest_existing_junitxml(pytester: Pytester) -> None:
-    x = pytester.mkdir("tests")
-    x.joinpath("conftest.py").write_text(
-        textwrap.dedent(
-            """\
-            def pytest_addoption(parser):
-                parser.addoption("--xyz", action="store_true")
-            """
-        ),
-        encoding="utf-8",
-    )
-    pytester.makefile(ext=".xml", junit="")  # Writes junit.xml
-    result = pytester.runpytest("-h", "--junitxml", "junit.xml")
-    result.stdout.fnmatch_lines(["*--xyz*"])
-
-
 def test_conftest_import_order(pytester: Pytester, monkeypatch: MonkeyPatch) -> None:
     ct1 = pytester.makeconftest("")
     sub = pytester.mkdir("sub")

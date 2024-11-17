@@ -1613,7 +1613,6 @@ def pytest_report_header(config, start_path):
             def test_one():
                 sys.stdout.write('!This is stdout!')
                 sys.stderr.write('!This is stderr!')
-                logging.warning('!This is a warning log msg!')
                 assert False, 'Something failed'
         """
         )
@@ -1623,7 +1622,6 @@ def pytest_report_header(config, start_path):
             [
                 "!This is stdout!",
                 "!This is stderr!",
-                "*WARNING*!This is a warning log msg!",
             ]
         )
 
@@ -1632,29 +1630,24 @@ def pytest_report_header(config, start_path):
             [
                 "!This is stdout!",
                 "!This is stderr!",
-                "*WARNING*!This is a warning log msg!",
             ]
         )
 
         stdout = pytester.runpytest("--show-capture=stdout", "--tb=short").stdout.str()
         assert "!This is stderr!" not in stdout
         assert "!This is stdout!" in stdout
-        assert "!This is a warning log msg!" not in stdout
 
         stdout = pytester.runpytest("--show-capture=stderr", "--tb=short").stdout.str()
         assert "!This is stdout!" not in stdout
         assert "!This is stderr!" in stdout
-        assert "!This is a warning log msg!" not in stdout
 
         stdout = pytester.runpytest("--show-capture=log", "--tb=short").stdout.str()
         assert "!This is stdout!" not in stdout
         assert "!This is stderr!" not in stdout
-        assert "!This is a warning log msg!" in stdout
 
         stdout = pytester.runpytest("--show-capture=no", "--tb=short").stdout.str()
         assert "!This is stdout!" not in stdout
         assert "!This is stderr!" not in stdout
-        assert "!This is a warning log msg!" not in stdout
 
     def test_show_capture_with_teardown_logs(self, pytester: Pytester) -> None:
         """Ensure that the capturing of teardown logs honor --show-capture setting"""
@@ -1669,7 +1662,6 @@ def pytest_report_header(config, start_path):
                 yield
                 sys.stdout.write("!stdout!")
                 sys.stderr.write("!stderr!")
-                logging.warning("!log!")
 
             def test_func():
                 assert False
@@ -1679,22 +1671,18 @@ def pytest_report_header(config, start_path):
         result = pytester.runpytest("--show-capture=stdout", "--tb=short").stdout.str()
         assert "!stdout!" in result
         assert "!stderr!" not in result
-        assert "!log!" not in result
 
         result = pytester.runpytest("--show-capture=stderr", "--tb=short").stdout.str()
         assert "!stdout!" not in result
         assert "!stderr!" in result
-        assert "!log!" not in result
 
         result = pytester.runpytest("--show-capture=log", "--tb=short").stdout.str()
         assert "!stdout!" not in result
         assert "!stderr!" not in result
-        assert "!log!" in result
 
         result = pytester.runpytest("--show-capture=no", "--tb=short").stdout.str()
         assert "!stdout!" not in result
         assert "!stderr!" not in result
-        assert "!log!" not in result
 
 
 @pytest.mark.xfail("not hasattr(os, 'dup')")
